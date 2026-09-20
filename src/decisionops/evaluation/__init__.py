@@ -6,13 +6,22 @@ from decisionops.evaluation.datasets import (
     load_dataset,
     validate_dataset_data,
 )
-from decisionops.evaluation.errors import DatasetIssue, DatasetValidationError
+from decisionops.evaluation.errors import (
+    DatasetIssue,
+    DatasetValidationError,
+    MetricsEvaluationError,
+)
+from decisionops.evaluation.metrics import CaseEvaluation, MetricsEngine, report_json
 
 __all__ = [
     "DatasetIssue",
     "DatasetValidationError",
+    "CaseEvaluation",
+    "MetricsEngine",
+    "MetricsEvaluationError",
     "canonical_dataset_json",
     "fingerprint_dataset",
     "load_dataset",
+    "report_json",
     "validate_dataset_data",
 ]

@@ -25,3 +25,7 @@ class DatasetValidationError(ValueError):
     def __init__(self, issues: tuple[DatasetIssue, ...]) -> None:
         self.issues = issues
         super().__init__("; ".join(issue.render() for issue in issues))
+
+
+class MetricsEvaluationError(ValueError):
+    """Raised when metric inputs cannot be compared reproducibly."""

@@ -44,3 +44,8 @@ data-retention boundary are documented in
 The versioned synthetic dataset format, contract binding, fingerprinting, and
 fixture suite are documented in
 [docs/evaluation-datasets.md](docs/evaluation-datasets.md).
+
+## Metrics and calibration
+
+The deterministic scoring formulas, calibration semantics, and reproducible JSON
+report boundary are documented in [docs/evaluation-metrics.md](docs/evaluation-metrics.md).

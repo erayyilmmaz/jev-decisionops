@@ -251,6 +251,84 @@ class ValidatedDataset(DomainModel):
     fingerprint: str = Field(min_length=64, max_length=64)
 
 
+class MetricValue(DomainModel):
+    """One metric value with an explicit applicable denominator."""
+
+    value: float | None = None
+    denominator: int = Field(ge=0)
+
+
+class CalibrationBucket(DomainModel):
+    """One fixed-width bucket without per-case state or identifiers."""
+
+    lower_bound: float = Field(ge=0.0, le=1.0)
+    upper_bound: float = Field(ge=0.0, le=1.0)
+    sample_count: int = Field(ge=0)
+    mean_prediction: float | None = Field(default=None, ge=0.0, le=1.0)
+    observed_frequency: float | None = Field(default=None, ge=0.0, le=1.0)
+
+
+class CalibrationReport(DomainModel):
+    """Calibration or descriptive confidence buckets for one question."""
+
+    basis: Literal["probability", "confidence"]
+    ece: MetricValue | None = None
+    buckets: tuple[CalibrationBucket, ...]
+
+
+class QuestionMetrics(DomainModel):
+    """Quality and calibration results for one contract question."""
+
+    question_id: str = Field(min_length=1, max_length=128)
+    kind: QuestionKind
+    scored_answers: int = Field(ge=0)
+    unscored_answers: int = Field(ge=0)
+    accuracy: MetricValue
+    precision: MetricValue
+    recall: MetricValue
+    f1: MetricValue
+    brier_score: MetricValue
+    log_loss: MetricValue
+    confusion_matrix: dict[str, dict[str, int]]
+    probability_calibration: CalibrationReport
+    confidence_buckets: CalibrationReport | None = None
+
+
+class AutomationMetrics(DomainModel):
+    """Policy disposition coverage kept separate from model quality metrics."""
+
+    act_coverage: MetricValue
+    act_subset_accuracy: MetricValue
+    selective_risk: MetricValue
+    review_rate: MetricValue
+    fallback_rate: MetricValue
+    provider_error_rate: MetricValue
+    act_unscored_cases: int = Field(ge=0)
+
+
+class OperationalMetrics(DomainModel):
+    """Provider operational results with no raw request or response payload."""
+
+    provider_successes: int = Field(ge=0)
+    provider_failures: int = Field(ge=0)
+    latency_p50_ms: MetricValue
+    latency_p95_ms: MetricValue
+
+
+class EvaluationMetricsReport(DomainModel):
+    """Deterministic offline quality report bound to contract and dataset identities."""
+
+    contract_fingerprint: str = Field(min_length=64, max_length=64)
+    dataset_fingerprint: str = Field(min_length=64, max_length=64)
+    total_cases: int = Field(ge=0)
+    scored_answers: int = Field(ge=0)
+    unscored_answers: int = Field(ge=0)
+    overall_accuracy: MetricValue
+    questions: tuple[QuestionMetrics, ...]
+    automation: AutomationMetrics
+    operational: OperationalMetrics
+
+
 class EvaluationRun(DomainModel):
     """Reproducibility identity for a future dataset evaluation execution."""
 

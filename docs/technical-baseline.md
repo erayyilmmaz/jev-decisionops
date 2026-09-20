@@ -77,7 +77,7 @@ evaluation or telemetry failure does not modify a production policy decision.
 | Contract fingerprint | SHA-256 of the canonical contract JSON (UTF-8, sorted object keys, normalized primitive values). |
 | Decision Run | One attempt to evaluate one contract against one input state using one provider configuration. |
 | Policy outcome | Deterministic `ACT`, `REVIEW`, or `FALLBACK`; it exists only after a valid provider result. |
-| Evaluation Case | One synthetic/labelled state and expected answers, identified by a stable case ID. |
+| Evaluation Case | One synthetic/labelled state and ground-truth labels, identified by a stable case ID. |
 | Dataset fingerprint | SHA-256 of canonical validated cases, including their order and schema version. |
 | Evaluation Run | A reproducible run over a dataset, retaining contract, dataset, provider, and metric metadata. |
 | Shadow Run | An optional independent provider execution against the same contract/state. It never overwrites Jev's result. |
@@ -127,7 +127,7 @@ misreported as model policy.
 | Category | Example | Counts as incorrect prediction? | Can policy run? |
 | --- | --- | ---: | ---: |
 | Contract validation failure | Unknown primitive or dangling rule reference | No | No |
-| Dataset validation failure | Duplicate case ID or unknown expected label | No | No |
+| Dataset validation failure | Duplicate case ID or unknown ground-truth label | No | No |
 | Provider execution failure | Timeout, rate limit, authentication, transport error | No | No |
 | Provider-result validation failure | Missing answer or invalid distribution | No | No |
 | Decision-quality failure | Valid answer differs from labelled truth | Yes | Yes |
