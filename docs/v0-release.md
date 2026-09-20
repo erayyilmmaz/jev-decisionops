@@ -64,6 +64,6 @@ TypeSafe/Jev material, models, and SDK integration are vendor inputs. Any vendor
 - [x] Docker build, security-boundary, and synthetic-demo CI jobs are declared.
 - [x] Manual live-provider smoke workflow is opt-in and separated from normal CI.
 - [x] README and architecture/methodology/limitations guidance exist.
-- [ ] Observe successful hosted CI runs after this release commit is pushed.
+- [x] Observe a successful hosted CI run for `12a7c25` ([run 35534894726](https://github.com/erayyilmmaz/jev-decisionops/actions/runs/35534894726)).
 - [ ] Build and publish a GitHub `v0.1.0` release/tag after hosted CI is green.
 - [ ] Run any desired live-provider smoke only with an authorized secret and explicit operator approval.
