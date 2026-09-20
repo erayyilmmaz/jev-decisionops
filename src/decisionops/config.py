@@ -71,3 +71,9 @@ class Settings(BaseSettings):
         le=3,
         validation_alias="SHADOW_MALFORMED_RETRIES",
     )
+    api_max_request_bytes: int = Field(
+        default=65_536,
+        ge=1_024,
+        le=1_048_576,
+        validation_alias="API_MAX_REQUEST_BYTES",
+    )

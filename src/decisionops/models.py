@@ -8,7 +8,7 @@ from math import isfinite
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 type JsonPrimitive = str | int | float | bool | None
 type JsonValue = JsonPrimitive | list[JsonValue] | dict[str, JsonValue]
@@ -249,6 +249,24 @@ class DecisionRun(DomainModel):
     result: ProviderResult | None = None
     failure: ProviderFailure | None = None
     policy: PolicyEvaluation | None = None
+
+
+class DecisionExecutionArtifact(DomainModel):
+    """One delivery-surface decision result without raw caller state."""
+
+    run_id: UUID
+    contract_fingerprint: str = Field(min_length=64, max_length=64)
+    result: ProviderResult | None = None
+    failure: ProviderFailure | None = None
+    policy: PolicyEvaluation | None = None
+
+    @model_validator(mode="after")
+    def validate_terminal_state(self) -> DecisionExecutionArtifact:
+        if (self.result is None) == (self.failure is None):
+            raise ValueError("exactly one of result or failure is required")
+        if self.policy is not None and self.result is None:
+            raise ValueError("a policy outcome requires a successful provider result")
+        return self
 
 
 class EvaluationCase(DomainModel):

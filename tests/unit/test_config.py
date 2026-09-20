@@ -13,4 +13,5 @@ def test_default_configuration_is_secretless_and_disables_live_calls() -> None:
     assert settings.shadow_openai_api_key is None
     assert settings.shadow_openai_model == "gpt-4o-mini"
     assert settings.shadow_timeout_seconds == 20.0
+    assert settings.api_max_request_bytes == 65_536
     assert settings.environment == "development"

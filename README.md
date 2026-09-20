@@ -59,3 +59,9 @@ documented in [docs/shadow-provider.md](docs/shadow-provider.md).
 
 Bounded dataset replay, explicit baseline compatibility, and versioned quality
 gates are documented in [docs/replay-regression.md](docs/replay-regression.md).
+
+## FastAPI and CLI
+
+The local FastAPI surface, CI-friendly CLI, JSON artifacts, stable exit codes,
+and delivery-surface security limits are documented in
+[docs/developer-experience.md](docs/developer-experience.md).
