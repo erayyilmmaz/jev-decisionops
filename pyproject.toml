@@ -28,6 +28,7 @@ decisionops = "decisionops.cli.main:main"
 dev = [
     "mypy>=1.19,<2",
     "pytest>=9.0,<10",
+    "pytest-cov>=7.0,<8",
     "ruff>=0.16,<1",
     "types-pyyaml>=6.0.12,<7",
 ]
@@ -42,6 +43,9 @@ packages = ["src/decisionops"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+    "integration: requires an explicitly configured PostgreSQL integration database",
+]
 
 [tool.ruff]
 target-version = "py314"
@@ -61,3 +65,7 @@ warn_unused_configs = true
 [tool.coverage.run]
 branch = true
 source = ["decisionops"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

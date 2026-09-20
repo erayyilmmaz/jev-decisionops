@@ -71,3 +71,9 @@ and delivery-surface security limits are documented in
 Low-cardinality Prometheus metrics, OpenTelemetry span boundaries, request and
 dataset limits, provider controls, and the container security boundary are
 documented in [docs/security-operations.md](docs/security-operations.md).
+
+## V0 release and synthetic demo
+
+The architecture diagram, secretless 500-case synthetic demo, CI boundaries,
+methodology, limitations, and release checklist are in
+[docs/v0-release.md](docs/v0-release.md).
