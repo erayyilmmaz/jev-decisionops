@@ -227,11 +227,28 @@ class DecisionRun(DomainModel):
 
 
 class EvaluationCase(DomainModel):
-    """Labelled synthetic evaluation case; dataset parsing arrives in JDO-8."""
+    """One labelled state used only for offline quality evaluation."""
 
     case_id: str = Field(min_length=1, max_length=128)
     state: dict[str, JsonValue]
-    expected: dict[str, JsonValue]
+    labels: dict[str, JsonValue] = Field(min_length=1)
+
+
+class EvaluationDataset(DomainModel):
+    """Versioned labelled cases bound to one exact Decision Contract identity."""
+
+    version: Literal[1]
+    name: str = Field(min_length=1, max_length=128)
+    contract: DecisionContractReference
+    cases: tuple[EvaluationCase, ...] = Field(min_length=1)
+
+
+class ValidatedDataset(DomainModel):
+    """Dataset plus canonical representation and reproducibility fingerprint."""
+
+    dataset: EvaluationDataset
+    canonical_json: str
+    fingerprint: str = Field(min_length=64, max_length=64)
 
 
 class EvaluationRun(DomainModel):

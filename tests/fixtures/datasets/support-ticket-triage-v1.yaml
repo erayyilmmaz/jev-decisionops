@@ -1,0 +1,39 @@
+version: 1
+name: support-ticket-triage-synthetic-v1
+contract:
+  name: support-ticket-triage
+  version: 1
+  fingerprint: 87f9c5bc6b0b946ee22a26fcc3873f04fe02485efce41dc27b5487ca1b581995
+cases:
+  - case_id: refund-clear-001
+    state:
+      message: "Synthetic fixture: I would like a refund for the duplicate charge."
+      account_status: active
+    labels:
+      intent: refund
+      unauthorized_activity: false
+      urgency: low
+  - case_id: unauthorized-critical-002
+    state:
+      message: "Synthetic fixture: My account was accessed by someone else and charges appeared."
+      account_status: active
+    labels:
+      intent: support
+      unauthorized_activity: true
+      urgency: critical
+  - case_id: cancellation-normal-003
+    state:
+      message: "Synthetic fixture: Please cancel my subscription at the end of this period."
+      account_status: active
+    labels:
+      intent: cancellation
+      unauthorized_activity: false
+      urgency: medium
+  - case_id: information-low-004
+    state:
+      message: "Synthetic fixture: Where can I find the current plan information?"
+      account_status: active
+    labels:
+      intent: information
+      unauthorized_activity: false
+      urgency: low

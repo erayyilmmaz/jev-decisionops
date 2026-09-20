@@ -38,3 +38,9 @@ format are documented in [docs/policy-engine.md](docs/policy-engine.md).
 The PostgreSQL audit record model, transactional write boundary, and the safe
 data-retention boundary are documented in
 [docs/persistence.md](docs/persistence.md).
+
+## Labelled evaluation datasets
+
+The versioned synthetic dataset format, contract binding, fingerprinting, and
+fixture suite are documented in
+[docs/evaluation-datasets.md](docs/evaluation-datasets.md).
