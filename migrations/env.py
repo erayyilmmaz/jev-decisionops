@@ -1,4 +1,4 @@
-"""Alembic environment; revisions and tables are intentionally absent in JDO-3."""
+"""Alembic environment for the DecisionOps PostgreSQL schema."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ from alembic import context
 from sqlalchemy import engine_from_config, pool
 
 from decisionops.config import Settings
-from decisionops.persistence.database import Base
+from decisionops.persistence import models as persistence_models
 
 config = context.config
 
@@ -16,7 +16,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 config.set_main_option("sqlalchemy.url", Settings().alembic_database_url)
-target_metadata = Base.metadata
+# Importing entities registers every declarative table before an Alembic
+# autogenerate operation. The explicit reference makes this side effect visible.
+target_metadata = persistence_models.Base.metadata
 
 
 def run_migrations_offline() -> None:

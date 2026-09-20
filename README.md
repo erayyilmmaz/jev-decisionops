@@ -32,3 +32,9 @@ and does not require `TYPESAFE_API_KEY`.
 
 The deterministic `ACT` / `REVIEW` / `FALLBACK` policy semantics and trace
 format are documented in [docs/policy-engine.md](docs/policy-engine.md).
+
+## Decision audit persistence
+
+The PostgreSQL audit record model, transactional write boundary, and the safe
+data-retention boundary are documented in
+[docs/persistence.md](docs/persistence.md).
