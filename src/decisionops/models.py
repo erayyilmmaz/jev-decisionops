@@ -38,6 +38,30 @@ class RegressionOutcome(StrEnum):
     INCOMPARABLE = "incomparable"
 
 
+class EvaluationRunStatus(StrEnum):
+    """Whether every replay case completed with valid, scoreable evidence."""
+
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+
+
+class CaseQualityState(StrEnum):
+    """Safe case-level quality summary used for replay comparison."""
+
+    CORRECT = "correct"
+    INCORRECT = "incorrect"
+    UNSCORED = "unscored"
+    PROVIDER_FAILURE = "provider_failure"
+
+
+class CaseChangeKind(StrEnum):
+    """Direction of a comparable case-quality change."""
+
+    IMPROVED = "improved"
+    REGRESSED = "regressed"
+    CHANGED = "changed"
+
+
 class ProviderFailureKind(StrEnum):
     """Execution failures kept distinct from decision-quality failures."""
 
@@ -326,8 +350,102 @@ class EvaluationMetricsReport(DomainModel):
     unscored_answers: int = Field(ge=0)
     overall_accuracy: MetricValue
     questions: tuple[QuestionMetrics, ...]
+    cases: tuple[CaseQuality, ...]
     automation: AutomationMetrics
     operational: OperationalMetrics
+
+
+class CaseQuality(DomainModel):
+    """Case-level score summary with no raw state, answer body, or debug payload."""
+
+    case_id: str = Field(min_length=1, max_length=128)
+    state: CaseQualityState
+    correct_answers: int = Field(ge=0)
+    scored_answers: int = Field(ge=0)
+    unscored_answers: int = Field(ge=0)
+    policy_outcome: PolicyOutcome | None = None
+    provider_failure_kind: ProviderFailureKind | None = None
+
+
+class ReplayRunArtifact(DomainModel):
+    """One bounded replay result suitable for deterministic baseline comparison."""
+
+    evaluation_id: UUID
+    status: EvaluationRunStatus
+    contract_fingerprint: str = Field(min_length=64, max_length=64)
+    dataset_fingerprint: str = Field(min_length=64, max_length=64)
+    providers: tuple[str, ...]
+    requested_models: tuple[str, ...]
+    resolved_models: tuple[str, ...]
+    policy_errors: int = Field(ge=0)
+    metrics: EvaluationMetricsReport
+
+
+class RegressionThresholds(DomainModel):
+    """Versioned V1 quality gate limits applied to the current complete run."""
+
+    version: Literal[1] = 1
+    minimum_accuracy: float | None = Field(default=None, ge=0.0, le=1.0)
+    maximum_ece: float | None = Field(default=None, ge=0.0, le=1.0)
+    maximum_brier_score: float | None = Field(default=None, ge=0.0)
+    minimum_act_accuracy: float | None = Field(default=None, ge=0.0, le=1.0)
+    maximum_provider_error_rate: float | None = Field(default=None, ge=0.0, le=1.0)
+    maximum_latency_p95_ms: float | None = Field(default=None, ge=0.0)
+
+
+class MetricDelta(DomainModel):
+    """One baseline/current metric pair; null delta means not applicable."""
+
+    name: str = Field(min_length=1, max_length=128)
+    baseline: float | None = None
+    current: float | None = None
+    delta: float | None = None
+
+
+class QuestionMetricDelta(DomainModel):
+    """Question-level quality deltas retained separately from global metrics."""
+
+    question_id: str = Field(min_length=1, max_length=128)
+    accuracy: MetricDelta
+    brier_score: MetricDelta
+    ece: MetricDelta
+
+
+class CaseChange(DomainModel):
+    """One changed case direction without exposing its state or provider body."""
+
+    case_id: str = Field(min_length=1, max_length=128)
+    kind: CaseChangeKind
+    baseline: CaseQualityState
+    current: CaseQualityState
+
+
+class ThresholdCheck(DomainModel):
+    """One transparent quality-gate check against the current run."""
+
+    name: str = Field(min_length=1, max_length=128)
+    actual: float | None = None
+    threshold: float
+    passed: bool
+
+
+class RegressionComparison(DomainModel):
+    """Deterministic comparison of baseline/current replay artifacts."""
+
+    outcome: RegressionOutcome
+    compatibility_reasons: tuple[str, ...] = ()
+    baseline_evaluation_id: UUID
+    current_evaluation_id: UUID
+    baseline_providers: tuple[str, ...]
+    current_providers: tuple[str, ...]
+    baseline_requested_models: tuple[str, ...]
+    current_requested_models: tuple[str, ...]
+    baseline_resolved_models: tuple[str, ...]
+    current_resolved_models: tuple[str, ...]
+    metric_deltas: tuple[MetricDelta, ...] = ()
+    question_deltas: tuple[QuestionMetricDelta, ...] = ()
+    changed_cases: tuple[CaseChange, ...] = ()
+    threshold_checks: tuple[ThresholdCheck, ...] = ()
 
 
 class EvaluationRun(DomainModel):

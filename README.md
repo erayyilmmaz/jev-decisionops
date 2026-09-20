@@ -54,3 +54,8 @@ report boundary are documented in [docs/evaluation-metrics.md](docs/evaluation-m
 
 The isolated OpenAI-compatible shadow path and its raw-debug data boundary are
 documented in [docs/shadow-provider.md](docs/shadow-provider.md).
+
+## Replay and regression gates
+
+Bounded dataset replay, explicit baseline compatibility, and versioned quality
+gates are documented in [docs/replay-regression.md](docs/replay-regression.md).

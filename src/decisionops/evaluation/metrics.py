@@ -20,6 +20,8 @@ from decisionops.models import (
     AutomationMetrics,
     CalibrationBucket,
     CalibrationReport,
+    CaseQuality,
+    CaseQualityState,
     ChoiceAnswer,
     DecisionAnswer,
     EvaluationMetricsReport,
@@ -99,6 +101,7 @@ class MetricsEngine:
         act_unscored_cases = 0
         review_cases = 0
         fallback_cases = 0
+        case_reports: list[CaseQuality] = []
 
         for case in dataset.dataset.cases:
             evaluation = evaluation_by_case[case.case_id]
@@ -106,6 +109,16 @@ class MetricsEngine:
                 provider_failures += 1
                 for question_id in questions:
                     unscored_by_question[question_id] += 1
+                case_reports.append(
+                    CaseQuality(
+                        case_id=case.case_id,
+                        state=CaseQualityState.PROVIDER_FAILURE,
+                        correct_answers=0,
+                        scored_answers=0,
+                        unscored_answers=len(questions),
+                        provider_failure_kind=evaluation.failure.kind,
+                    )
+                )
                 continue
 
             assert evaluation.result is not None
@@ -140,6 +153,19 @@ class MetricsEngine:
                 elif evaluation.policy.outcome == PolicyOutcome.FALLBACK:
                     fallback_cases += 1
 
+            case_reports.append(
+                CaseQuality(
+                    case_id=case.case_id,
+                    state=_case_quality_state(case_scores, len(questions)),
+                    correct_answers=sum(score.correct for score in case_scores),
+                    scored_answers=len(case_scores),
+                    unscored_answers=len(questions) - len(case_scores),
+                    policy_outcome=(
+                        evaluation.policy.outcome if evaluation.policy is not None else None
+                    ),
+                )
+            )
+
         question_reports = tuple(
             _question_metrics(
                 question_id=question_id,
@@ -165,6 +191,7 @@ class MetricsEngine:
                 denominator=scored_answers,
             ),
             questions=question_reports,
+            cases=tuple(case_reports),
             automation=_automation_metrics(
                 total_cases=total_cases,
                 act_cases=act_cases,
@@ -401,6 +428,19 @@ def _question_metrics(
             if confidence_points
             else None
         ),
+    )
+
+
+def _case_quality_state(
+    scores: list[_ScoredAnswer],
+    question_count: int,
+) -> CaseQualityState:
+    if len(scores) != question_count:
+        return CaseQualityState.UNSCORED
+    return (
+        CaseQualityState.CORRECT
+        if all(score.correct for score in scores)
+        else CaseQualityState.INCORRECT
     )
 
 

@@ -57,4 +57,4 @@ report = MetricsEngine(calibration_bucket_count=10).evaluate(
 artifact = report_json(report)
 ```
 
-The later replay/regression story obtains `case_evaluations`. JDO-9 scores only existing sanitized terminal records and does not change production policy.
+`ReplayEngine` now obtains `case_evaluations` through bounded provider execution and the deterministic policy engine. `MetricsEngine` remains independent of provider, database, clock, and production-policy mutation.

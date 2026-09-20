@@ -12,6 +12,13 @@ from decisionops.evaluation.errors import (
     MetricsEvaluationError,
 )
 from decisionops.evaluation.metrics import CaseEvaluation, MetricsEngine, report_json
+from decisionops.evaluation.replay import (
+    RegressionEngine,
+    ReplayEngine,
+    regression_comparison_json,
+    replay_artifact_json,
+    select_baseline,
+)
 
 __all__ = [
     "DatasetIssue",
@@ -19,9 +26,14 @@ __all__ = [
     "CaseEvaluation",
     "MetricsEngine",
     "MetricsEvaluationError",
+    "RegressionEngine",
+    "ReplayEngine",
     "canonical_dataset_json",
     "fingerprint_dataset",
     "load_dataset",
     "report_json",
+    "regression_comparison_json",
+    "replay_artifact_json",
+    "select_baseline",
     "validate_dataset_data",
 ]
