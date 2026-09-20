@@ -27,3 +27,8 @@ explicit boundary around live provider calls.
 V1 contract syntax, validation guarantees, and a runnable example are described
 in [docs/decision-contract.md](docs/decision-contract.md). Validation is local
 and does not require `TYPESAFE_API_KEY`.
+
+## Policy Engine
+
+The deterministic `ACT` / `REVIEW` / `FALLBACK` policy semantics and trace
+format are documented in [docs/policy-engine.md](docs/policy-engine.md).

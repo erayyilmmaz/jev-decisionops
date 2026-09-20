@@ -187,11 +187,30 @@ class ProviderFailure(DomainModel):
     request_id: str | None = Field(default=None, max_length=256)
 
 
+class PolicyPredicateEvaluation(DomainModel):
+    """One deterministic predicate comparison without raw caller state."""
+
+    predicate: str = Field(min_length=1, max_length=64)
+    observed: JsonPrimitive
+    expected: JsonPrimitive
+    matched: bool
+
+
+class RuleEvaluation(DomainModel):
+    """Trace of a policy rule evaluated in declaration order."""
+
+    rule_id: str = Field(min_length=1, max_length=64)
+    question_id: str = Field(min_length=1, max_length=64)
+    predicates: tuple[PolicyPredicateEvaluation, ...] = Field(min_length=1)
+    matched: bool
+
+
 class PolicyEvaluation(DomainModel):
     """Explainable deterministic policy result for a successful provider call."""
 
     outcome: PolicyOutcome
     matched_rule_id: str | None = Field(default=None, max_length=128)
+    rule_evaluations: tuple[RuleEvaluation, ...] = ()
 
 
 class DecisionRun(DomainModel):
