@@ -144,6 +144,7 @@ async def test_missing_api_key_returns_configuration_failure_without_client_call
 
     assert isinstance(result, ProviderFailure)
     assert result.kind == ProviderFailureKind.CONFIGURATION
+    assert result.provider == "typesafe_jev"
     assert called is False
 
 
@@ -164,6 +165,7 @@ async def test_timeout_is_execution_failure_not_policy_outcome() -> None:
 
     assert isinstance(result, ProviderFailure)
     assert result.kind == ProviderFailureKind.TIMEOUT
+    assert result.provider == "typesafe_jev"
 
 
 @pytest.mark.anyio

@@ -15,6 +15,7 @@ dependencies = [
     "sqlalchemy>=2.0.48,<3",
     "typesafe-sdk==0.7.0",
     "uvicorn>=0.41,<1",
+    "system-one-adapter[openai]==0.2.0",
 ]
 
 [project.scripts]

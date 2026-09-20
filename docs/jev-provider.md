@@ -31,6 +31,9 @@ On success the common `ProviderResult` contains:
 The adapter stores no raw provider body, request state, API key, authorization
 header, or SDK debug payload.
 
+Every sanitized failure also carries `provider=typesafe_jev`, allowing the audit
+boundary to preserve its source without recording an error body or stack trace.
+
 ## Failure mapping
 
 | SDK/config condition | Common failure kind | Policy outcome? |

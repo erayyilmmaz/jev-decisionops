@@ -96,7 +96,7 @@ async def record_execution(
         run = DecisionRunRecord(
             id=run_id,
             contract_id=contract_record.id,
-            provider="typesafe_jev",
+            provider=failure.provider or "typesafe_jev",
             status="failed",
             failure_kind=failure.kind.value,
             failure_message=failure.message,

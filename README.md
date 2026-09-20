@@ -49,3 +49,8 @@ fixture suite are documented in
 
 The deterministic scoring formulas, calibration semantics, and reproducible JSON
 report boundary are documented in [docs/evaluation-metrics.md](docs/evaluation-metrics.md).
+
+## LLM shadow provider
+
+The isolated OpenAI-compatible shadow path and its raw-debug data boundary are
+documented in [docs/shadow-provider.md](docs/shadow-provider.md).

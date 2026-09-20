@@ -10,21 +10,16 @@ from types import TracebackType
 from typing import Any, Protocol, cast
 
 import typesafe_sdk as typesafe
-from pydantic import SecretStr, ValidationError
+from pydantic import SecretStr
 
 from decisionops.config import Settings
-from decisionops.contracts.schema import ChoiceQuestion, NoulQuestion, ScoreQuestion
 from decisionops.models import (
-    ChoiceAnswer,
-    DecisionAnswer,
-    NoulAnswer,
     ProviderFailure,
     ProviderFailureKind,
-    ProviderMetadata,
     ProviderResult,
-    ScoreAnswer,
 )
 from decisionops.providers.request import ProviderRequest
+from decisionops.providers.system_one import build_system_one_questions, map_system_one_response
 
 
 class AsyncSystemOneClient(Protocol):
@@ -89,11 +84,12 @@ class JevDecisionProvider:
 
         if self._api_key is None:
             return ProviderFailure(
+                provider="typesafe_jev",
                 kind=ProviderFailureKind.CONFIGURATION,
                 message="TypeSafe API key is not configured",
             )
 
-        questions = _build_questions(request)
+        questions = build_system_one_questions(request)
         retry_policy = typesafe.RetryPolicy(
             max_retries=self._options.max_retries,
             backoff_initial=0.1,
@@ -131,12 +127,20 @@ class JevDecisionProvider:
             return _failure(ProviderFailureKind.UNKNOWN, "TypeSafe request failed", error)
         except Exception:
             return ProviderFailure(
+                provider="typesafe_jev",
                 kind=ProviderFailureKind.UNKNOWN,
                 message="unexpected provider execution failure",
             )
 
         latency_ms = max(0, round((self._monotonic_clock() - started) * 1000))
-        return _map_response(request, response, latency_ms, self._options.model)
+        return map_system_one_response(
+            request,
+            response,
+            provider="typesafe_jev",
+            requested_model=self._options.model,
+            sdk_version=typesafe.__version__,
+            latency_ms=latency_ms,
+        )
 
 
 def jev_provider_from_settings(settings: Settings) -> JevDecisionProvider:
@@ -169,98 +173,6 @@ def _default_client_factory(
     )
 
 
-def _build_questions(
-    request: ProviderRequest,
-) -> dict[str, typesafe.Noul | typesafe.Choice | typesafe.Score]:
-    questions: dict[str, typesafe.Noul | typesafe.Choice | typesafe.Score] = {}
-    for question_id, question in request.contract.questions.items():
-        if isinstance(question, NoulQuestion):
-            questions[question_id] = typesafe.Noul(
-                instructions=question.instructions,
-                criteria=cast(Any, question.criteria),
-            )
-        elif isinstance(question, ChoiceQuestion):
-            questions[question_id] = typesafe.Choice(
-                instructions=question.instructions,
-                criteria=question.criteria,
-            )
-        elif isinstance(question, ScoreQuestion):
-            questions[question_id] = typesafe.Score(
-                instructions=question.instructions,
-                criteria=question.criteria,
-            )
-    return questions
-
-
-def _map_response(
-    request: ProviderRequest,
-    response: typesafe.SystemOneResponse,
-    latency_ms: int,
-    requested_model: str,
-) -> ProviderResult | ProviderFailure:
-    answers: list[DecisionAnswer] = []
-    for question_id in request.contract.questions:
-        answer = response.answers.get(question_id)
-        if answer is None:
-            return ProviderFailure(
-                kind=ProviderFailureKind.INVALID_RESPONSE,
-                message=f"TypeSafe response is missing required answer {question_id!r}",
-            )
-        if isinstance(answer, typesafe.NoulAnswer):
-            answers.append(NoulAnswer(question_id=question_id, noul=answer.noul))
-        elif isinstance(answer, typesafe.ChoiceAnswer):
-            answers.append(
-                ChoiceAnswer(
-                    question_id=question_id,
-                    choice=answer.choice,
-                    probabilities=answer.probabilities,
-                    confidence=answer.confidence,
-                )
-            )
-        elif isinstance(answer, typesafe.ScoreAnswer):
-            answers.append(
-                ScoreAnswer(
-                    question_id=question_id,
-                    score=answer.score,
-                    legend=cast(dict[int, Any], answer.legend),
-                    probabilities=answer.probabilities,
-                    confidence=answer.confidence,
-                )
-            )
-        else:
-            return ProviderFailure(
-                kind=ProviderFailureKind.INVALID_RESPONSE,
-                message=f"TypeSafe returned unsupported answer for {question_id!r}",
-            )
-
-    try:
-        return ProviderResult(
-            metadata=ProviderMetadata(
-                provider="typesafe_jev",
-                requested_model=requested_model,
-                resolved_model=response.model,
-                sdk_version=typesafe.__version__,
-                request_id=_response_request_id(response),
-                input_tokens=response.usage.input_tokens,
-                output_tokens=response.usage.output_tokens,
-            ),
-            answers=tuple(answers),
-            latency_ms=latency_ms,
-        )
-    except ValidationError:
-        return ProviderFailure(
-            kind=ProviderFailureKind.INVALID_RESPONSE,
-            message="TypeSafe returned an invalid typed answer",
-        )
-
-
-def _response_request_id(response: typesafe.SystemOneResponse) -> str | None:
-    try:
-        return response.request_id
-    except typesafe.TypeSafeError:
-        return None
-
-
 def _failure(
     kind: ProviderFailureKind,
     message: str,
@@ -268,6 +180,7 @@ def _failure(
 ) -> ProviderFailure:
     request_id = getattr(error, "request_id", None)
     return ProviderFailure(
+        provider="typesafe_jev",
         kind=kind,
         message=message,
         request_id=request_id if isinstance(request_id, str) else None,

@@ -45,3 +45,29 @@ class Settings(BaseSettings):
     live_provider_calls_enabled: bool = Field(
         default=False, validation_alias="LIVE_PROVIDER_CALLS_ENABLED"
     )
+    shadow_provider_enabled: bool = Field(default=False, validation_alias="SHADOW_PROVIDER_ENABLED")
+    shadow_openai_api_key: SecretStr | None = Field(
+        default=None, validation_alias="SHADOW_OPENAI_API_KEY"
+    )
+    shadow_openai_model: str = Field(default="gpt-4o-mini", validation_alias="SHADOW_OPENAI_MODEL")
+    shadow_openai_base_url: str | None = Field(
+        default=None, validation_alias="SHADOW_OPENAI_BASE_URL"
+    )
+    shadow_timeout_seconds: float = Field(
+        default=20.0,
+        gt=0.0,
+        le=60.0,
+        validation_alias="SHADOW_TIMEOUT_SECONDS",
+    )
+    shadow_max_retries: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        validation_alias="SHADOW_MAX_RETRIES",
+    )
+    shadow_malformed_retries: int = Field(
+        default=1,
+        ge=0,
+        le=3,
+        validation_alias="SHADOW_MALFORMED_RETRIES",
+    )

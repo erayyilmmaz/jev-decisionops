@@ -182,6 +182,7 @@ class ProviderResult(DomainModel):
 class ProviderFailure(DomainModel):
     """Sanitized provider execution failure; it is never a policy outcome."""
 
+    provider: str | None = Field(default=None, min_length=1, max_length=64)
     kind: ProviderFailureKind
     message: str = Field(min_length=1, max_length=512)
     request_id: str | None = Field(default=None, max_length=256)
