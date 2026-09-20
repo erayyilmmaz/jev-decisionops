@@ -29,6 +29,19 @@ class Settings(BaseSettings):
         validation_alias="ALEMBIC_DATABASE_URL",
     )
     typesafe_api_key: SecretStr | None = Field(default=None, validation_alias="TYPESAFE_API_KEY")
+    typesafe_model: str = Field(default="jev-latest", validation_alias="TYPESAFE_MODEL")
+    typesafe_timeout_seconds: float = Field(
+        default=10.0,
+        gt=0.0,
+        le=60.0,
+        validation_alias="TYPESAFE_TIMEOUT_SECONDS",
+    )
+    typesafe_max_retries: int = Field(
+        default=2,
+        ge=0,
+        le=3,
+        validation_alias="TYPESAFE_MAX_RETRIES",
+    )
     live_provider_calls_enabled: bool = Field(
         default=False, validation_alias="LIVE_PROVIDER_CALLS_ENABLED"
     )

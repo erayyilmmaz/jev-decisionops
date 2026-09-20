@@ -25,7 +25,7 @@ class ContractModel(BaseModel):
 class NoulQuestion(ContractModel):
     type: Literal[QuestionKind.NOUL] = QuestionKind.NOUL
     instructions: str = Field(min_length=1)
-    criteria: dict[Literal["yes", "no"], str] | None = None
+    criteria: dict[Literal["true", "false"], str] | None = None
 
 
 class ChoiceQuestion(ContractModel):

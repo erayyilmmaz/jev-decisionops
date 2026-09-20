@@ -34,7 +34,7 @@ policy:
 | `name` | Required lowercase slug using letters, digits, and hyphens. |
 | `questions` | Non-empty mapping. Question IDs use lowercase letters, digits, and underscores. |
 | `type` | Exactly `noul`, `choice`, or `score`. |
-| `criteria` | Optional `yes`/`no` descriptions for `noul`; at least two labelled options for `choice`; at least two unique ordered levels for `score`. |
+| `criteria` | Optional `true`/`false` descriptions for `noul`; at least two labelled options for `choice`; at least two unique ordered levels for `score`. |
 | `policy.rules` | Non-empty ordered rules. `id` is optional; omitted IDs become `rule-1`, `rule-2`, and so on in canonical output. |
 | `policy.default` | Required `act`, `review`, or `fallback`. |
 

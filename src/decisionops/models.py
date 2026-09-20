@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import StrEnum
+from math import isfinite
 from typing import Annotated, Literal
 from uuid import UUID
 
@@ -41,6 +42,7 @@ class ProviderFailureKind(StrEnum):
     """Execution failures kept distinct from decision-quality failures."""
 
     AUTHENTICATION = "authentication"
+    CONFIGURATION = "configuration"
     RATE_LIMITED = "rate_limited"
     TIMEOUT = "timeout"
     TRANSPORT = "transport"
@@ -81,8 +83,11 @@ class ProviderMetadata(DomainModel):
 
     provider: str = Field(min_length=1, max_length=64)
     requested_model: str | None = Field(default=None, max_length=256)
+    resolved_model: str | None = Field(default=None, max_length=256)
     sdk_version: str | None = Field(default=None, max_length=64)
     request_id: str | None = Field(default=None, max_length=256)
+    input_tokens: int | None = Field(default=None, ge=0)
+    output_tokens: int | None = Field(default=None, ge=0)
 
 
 class DecisionRequest(DomainModel):
@@ -128,14 +133,21 @@ class ChoiceAnswer(AnswerBase):
             raise ValueError("confidence must be within [0, 1]")
         return value
 
+    @field_validator("probabilities")
+    @classmethod
+    def validate_probabilities(cls, values: dict[str, float]) -> dict[str, float]:
+        if any(not isfinite(value) or not 0.0 <= value <= 1.0 for value in values.values()):
+            raise ValueError("probabilities must contain finite values within [0, 1]")
+        return values
+
 
 class ScoreAnswer(AnswerBase):
     """Position on an ordered legend, its distribution, and confidence."""
 
     kind: Literal[QuestionKind.SCORE] = QuestionKind.SCORE
     score: float
-    legend: tuple[str, ...] = Field(min_length=1)
-    probabilities: dict[str, float] = Field(min_length=1)
+    legend: dict[int, JsonValue] = Field(min_length=1)
+    probabilities: dict[int, float] = Field(min_length=1)
     confidence: float
 
     @field_validator("confidence")
@@ -144,6 +156,13 @@ class ScoreAnswer(AnswerBase):
         if not 0.0 <= value <= 1.0:
             raise ValueError("confidence must be within [0, 1]")
         return value
+
+    @field_validator("probabilities")
+    @classmethod
+    def validate_probabilities(cls, values: dict[int, float]) -> dict[int, float]:
+        if any(not isfinite(value) or not 0.0 <= value <= 1.0 for value in values.values()):
+            raise ValueError("probabilities must contain finite values within [0, 1]")
+        return values
 
 
 type DecisionAnswer = Annotated[
