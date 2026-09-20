@@ -1,0 +1,57 @@
+[project]
+name = "jev-decisionops"
+version = "0.1.0"
+description = "Decision quality and reliability layer for typed probabilistic workflows with Jev."
+readme = "README.md"
+requires-python = "==3.14.*"
+dependencies = [
+    "alembic>=1.18,<2",
+    "asyncpg>=0.31,<1",
+    "fastapi>=0.128,<1",
+    "pydantic>=2.12,<3",
+    "pydantic-settings>=2.12,<3",
+    "psycopg[binary]>=3.3,<4",
+    "sqlalchemy>=2.0.48,<3",
+    "typesafe-sdk==0.7.0",
+    "uvicorn>=0.41,<1",
+]
+
+[project.scripts]
+decisionops = "decisionops.cli.main:main"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19,<2",
+    "pytest>=9.0,<10",
+    "ruff>=0.16,<1",
+]
+
+[build-system]
+requires = ["hatchling>=1.28,<2"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/decisionops"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py314"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+files = ["src", "tests"]
+mypy_path = "src"
+warn_unused_configs = true
+
+[tool.coverage.run]
+branch = true
+source = ["decisionops"]
