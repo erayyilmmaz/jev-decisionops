@@ -1,0 +1,36 @@
+version: 1
+name: support-ticket-triage
+questions:
+  intent:
+    type: choice
+    instructions: What is the customer's primary intent?
+    criteria:
+      refund: Customer wants a refund.
+      cancellation: Customer wants to cancel.
+      support: Customer needs technical assistance.
+      information: Customer only requests information.
+  unauthorized_activity:
+    type: noul
+    instructions: Is there evidence of unauthorized account activity?
+  urgency:
+    type: score
+    instructions: How urgent is this request?
+    criteria:
+      - low
+      - medium
+      - high
+      - critical
+policy:
+  rules:
+    - id: suspicious-activity-review
+      when:
+        question: unauthorized_activity
+        probability_gte: 0.90
+      outcome: review
+    - id: high-confidence-refund
+      when:
+        question: intent
+        equals: refund
+        confidence_gte: 0.95
+      outcome: act
+  default: fallback

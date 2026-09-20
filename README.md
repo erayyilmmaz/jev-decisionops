@@ -21,3 +21,9 @@ uv run pytest
 
 See [docs/development.md](docs/development.md) for local PostgreSQL and the
 explicit boundary around live provider calls.
+
+## Decision Contracts
+
+V1 contract syntax, validation guarantees, and a runnable example are described
+in [docs/decision-contract.md](docs/decision-contract.md). Validation is local
+and does not require `TYPESAFE_API_KEY`.

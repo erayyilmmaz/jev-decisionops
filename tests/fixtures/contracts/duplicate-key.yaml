@@ -1,0 +1,14 @@
+version: 1
+name: duplicate-name
+name: overwritten-name
+questions:
+  needs_review:
+    type: noul
+    instructions: Does this require review?
+policy:
+  rules:
+    - when:
+        question: needs_review
+        probability_gte: 0.9
+      outcome: review
+  default: fallback

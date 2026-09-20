@@ -11,6 +11,7 @@ dependencies = [
     "pydantic>=2.12,<3",
     "pydantic-settings>=2.12,<3",
     "psycopg[binary]>=3.3,<4",
+    "pyyaml>=6.0,<7",
     "sqlalchemy>=2.0.48,<3",
     "typesafe-sdk==0.7.0",
     "uvicorn>=0.41,<1",
@@ -24,6 +25,7 @@ dev = [
     "mypy>=1.19,<2",
     "pytest>=9.0,<10",
     "ruff>=0.16,<1",
+    "types-pyyaml>=6.0.12,<7",
 ]
 
 [build-system]
