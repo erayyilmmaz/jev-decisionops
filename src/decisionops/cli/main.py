@@ -13,13 +13,15 @@ from typing import TextIO, cast
 from pydantic import ValidationError
 
 from decisionops.application import (
+    DatasetSizeLimitError,
     DecisionOpsApplicationService,
     DecisionPolicyExecutionError,
+    OutboundProviderNotAllowedError,
     ProviderExecutionDisabledError,
 )
 from decisionops.config import Settings
 from decisionops.contracts import ContractValidationError, load_contract
-from decisionops.evaluation import DatasetValidationError, RegressionEngine
+from decisionops.evaluation import DatasetValidationError
 from decisionops.models import JsonValue, RegressionOutcome, RegressionThresholds, ReplayRunArtifact
 
 EXIT_SUCCESS = 0
@@ -67,7 +69,12 @@ def run_cli(
     ) as error:
         _emit_error(args, error, errors)
         return EXIT_USAGE_OR_CONFIGURATION_ERROR
-    except (ProviderExecutionDisabledError, DecisionPolicyExecutionError) as error:
+    except (
+        ProviderExecutionDisabledError,
+        OutboundProviderNotAllowedError,
+        DecisionPolicyExecutionError,
+        DatasetSizeLimitError,
+    ) as error:
         _emit_error(args, error, errors)
         return EXIT_PROVIDER_OR_EVALUATION_FAILURE
 
@@ -173,7 +180,7 @@ def _dispatch(
         baseline = _load_replay_artifact(args.baseline)
         current = _load_replay_artifact(args.current)
         thresholds = _load_thresholds(args.thresholds) if args.thresholds is not None else None
-        comparison = RegressionEngine().compare(baseline, current, thresholds=thresholds)
+        comparison = service.compare_evaluations(baseline, current, thresholds=thresholds)
         _emit(
             args,
             comparison.model_dump(mode="json"),

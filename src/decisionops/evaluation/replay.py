@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 import json
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from contextlib import AbstractContextManager, nullcontext
 from uuid import UUID
 
 from decisionops.clock import IdentifierGenerator, Uuid4Generator
@@ -20,6 +21,7 @@ from decisionops.models import (
     JsonValue,
     MetricDelta,
     PolicyEvaluation,
+    PolicyOutcome,
     ProviderFailure,
     ProviderFailureKind,
     QuestionMetricDelta,
@@ -44,6 +46,10 @@ class ReplayEngine:
         metrics_engine: MetricsEngine | None = None,
         max_concurrency: int = 4,
         identifiers: IdentifierGenerator | None = None,
+        case_span: Callable[[], AbstractContextManager[None]] | None = None,
+        aggregate_span: Callable[[], AbstractContextManager[None]] | None = None,
+        policy_span: Callable[[], AbstractContextManager[None]] | None = None,
+        policy_outcome_observer: Callable[[PolicyOutcome], None] | None = None,
     ) -> None:
         if not 1 <= max_concurrency <= 16:
             raise ValueError("max_concurrency must be within [1, 16]")
@@ -51,6 +57,10 @@ class ReplayEngine:
         self._metrics_engine = metrics_engine or MetricsEngine()
         self._max_concurrency = max_concurrency
         self._identifiers = identifiers or Uuid4Generator()
+        self._case_span = case_span or nullcontext
+        self._aggregate_span = aggregate_span or nullcontext
+        self._policy_span = policy_span or nullcontext
+        self._policy_outcome_observer = policy_outcome_observer
 
     async def run(
         self,
@@ -61,33 +71,34 @@ class ReplayEngine:
     ) -> ReplayRunArtifact:
         """Evaluate every ordered case, then derive one metrics artifact."""
 
-        semaphore = asyncio.Semaphore(self._max_concurrency)
-        outcomes = await asyncio.gather(
-            *(
-                self._run_case(
-                    semaphore=semaphore,
-                    provider=provider,
-                    contract=contract,
-                    case_id=case.case_id,
-                    state=case.state,
+        with self._aggregate_span():
+            semaphore = asyncio.Semaphore(self._max_concurrency)
+            outcomes = await asyncio.gather(
+                *(
+                    self._run_case(
+                        semaphore=semaphore,
+                        provider=provider,
+                        contract=contract,
+                        case_id=case.case_id,
+                        state=case.state,
+                    )
+                    for case in dataset.dataset.cases
                 )
-                for case in dataset.dataset.cases
             )
-        )
-        evaluations = tuple(outcome.evaluation for outcome in outcomes)
-        policy_errors = sum(outcome.policy_error for outcome in outcomes)
-        metrics = self._metrics_engine.evaluate(contract, dataset, evaluations)
-        return ReplayRunArtifact(
-            evaluation_id=self._identifiers.new(),
-            status=_run_status(metrics, policy_errors),
-            contract_fingerprint=contract.fingerprint,
-            dataset_fingerprint=dataset.fingerprint,
-            providers=_provider_names(evaluations),
-            requested_models=_requested_models(evaluations),
-            resolved_models=_resolved_models(evaluations),
-            policy_errors=policy_errors,
-            metrics=metrics,
-        )
+            evaluations = tuple(outcome.evaluation for outcome in outcomes)
+            policy_errors = sum(outcome.policy_error for outcome in outcomes)
+            metrics = self._metrics_engine.evaluate(contract, dataset, evaluations)
+            return ReplayRunArtifact(
+                evaluation_id=self._identifiers.new(),
+                status=_run_status(metrics, policy_errors),
+                contract_fingerprint=contract.fingerprint,
+                dataset_fingerprint=dataset.fingerprint,
+                providers=_provider_names(evaluations),
+                requested_models=_requested_models(evaluations),
+                resolved_models=_resolved_models(evaluations),
+                policy_errors=policy_errors,
+                metrics=metrics,
+            )
 
     async def _run_case(
         self,
@@ -98,40 +109,49 @@ class ReplayEngine:
         case_id: str,
         state: dict[str, JsonValue],
     ) -> _CaseReplayOutcome:
-        async with semaphore:
-            request = ProviderRequest(
-                contract=contract.contract,
-                canonical_json=contract.canonical_json,
-                fingerprint=contract.fingerprint,
-                state=state,
-            )
-            try:
-                terminal = await provider.evaluate(request)
-            except Exception:
-                return _CaseReplayOutcome(
-                    evaluation=CaseEvaluation(
-                        case_id=case_id,
-                        failure=ProviderFailure(
-                            provider="replay_runtime",
-                            kind=ProviderFailureKind.UNKNOWN,
-                            message="provider evaluation raised an unexpected error",
+        with self._case_span():
+            async with semaphore:
+                request = ProviderRequest(
+                    contract=contract.contract,
+                    canonical_json=contract.canonical_json,
+                    fingerprint=contract.fingerprint,
+                    state=state,
+                )
+                try:
+                    terminal = await provider.evaluate(request)
+                except Exception:
+                    return _CaseReplayOutcome(
+                        evaluation=CaseEvaluation(
+                            case_id=case_id,
+                            failure=ProviderFailure(
+                                provider="replay_runtime",
+                                kind=ProviderFailureKind.UNKNOWN,
+                                message="provider evaluation raised an unexpected error",
+                            ),
                         ),
                     )
+
+            if isinstance(terminal, ProviderFailure):
+                return _CaseReplayOutcome(
+                    evaluation=CaseEvaluation(case_id=case_id, failure=terminal)
                 )
 
-        if isinstance(terminal, ProviderFailure):
-            return _CaseReplayOutcome(evaluation=CaseEvaluation(case_id=case_id, failure=terminal))
-
-        policy: PolicyEvaluation | None = None
-        policy_error = False
-        try:
-            policy = self._policy_engine.evaluate(contract.contract, terminal)
-        except PolicyEvaluationError:
-            policy_error = True
-        return _CaseReplayOutcome(
-            evaluation=CaseEvaluation(case_id=case_id, result=terminal, policy=policy),
-            policy_error=policy_error,
-        )
+            policy: PolicyEvaluation | None = None
+            policy_error = False
+            try:
+                with self._policy_span():
+                    policy = self._policy_engine.evaluate(contract.contract, terminal)
+                if self._policy_outcome_observer is not None:
+                    try:
+                        self._policy_outcome_observer(policy.outcome)
+                    except Exception:
+                        pass
+            except PolicyEvaluationError:
+                policy_error = True
+            return _CaseReplayOutcome(
+                evaluation=CaseEvaluation(case_id=case_id, result=terminal, policy=policy),
+                policy_error=policy_error,
+            )
 
 
 class RegressionEngine:

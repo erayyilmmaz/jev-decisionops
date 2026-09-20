@@ -65,3 +65,9 @@ gates are documented in [docs/replay-regression.md](docs/replay-regression.md).
 The local FastAPI surface, CI-friendly CLI, JSON artifacts, stable exit codes,
 and delivery-surface security limits are documented in
 [docs/developer-experience.md](docs/developer-experience.md).
+
+## Telemetry and operational safeguards
+
+Low-cardinality Prometheus metrics, OpenTelemetry span boundaries, request and
+dataset limits, provider controls, and the container security boundary are
+documented in [docs/security-operations.md](docs/security-operations.md).

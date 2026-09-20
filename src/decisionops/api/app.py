@@ -12,9 +12,11 @@ from pydantic import BaseModel, ConfigDict
 from starlette.middleware.base import RequestResponseEndpoint
 
 from decisionops.application import (
+    DatasetSizeLimitError,
     DecisionOpsApplicationService,
     DecisionPolicyExecutionError,
     EvaluationNotFoundError,
+    OutboundProviderNotAllowedError,
     ProviderExecutionDisabledError,
 )
 from decisionops.config import Settings
@@ -134,6 +136,24 @@ def create_app(
             message="live provider execution is disabled",
         )
 
+    @app.exception_handler(OutboundProviderNotAllowedError)
+    async def outbound_provider_not_allowed(
+        _: Request, __: OutboundProviderNotAllowedError
+    ) -> JSONResponse:
+        return _error_response(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="outbound_provider_not_allowed",
+            message="configured provider is not available for outbound execution",
+        )
+
+    @app.exception_handler(DatasetSizeLimitError)
+    async def dataset_size_limit(_: Request, __: DatasetSizeLimitError) -> JSONResponse:
+        return _error_response(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            code="dataset_too_large",
+            message="evaluation dataset exceeds the configured case limit",
+        )
+
     @app.exception_handler(DecisionPolicyExecutionError)
     async def policy_execution_error(_: Request, __: DecisionPolicyExecutionError) -> JSONResponse:
         return _error_response(
@@ -201,6 +221,11 @@ def create_app(
                 message="one or more required local dependencies are not ready",
             )
         return JSONResponse({"status": "ready", "checks": service.readiness()})
+
+    @app.get("/metrics", include_in_schema=False)
+    async def metrics() -> Response:
+        payload, media_type = service.prometheus_metrics()
+        return Response(content=payload, media_type=media_type)
 
     return app
 

@@ -77,3 +77,27 @@ class Settings(BaseSettings):
         le=1_048_576,
         validation_alias="API_MAX_REQUEST_BYTES",
     )
+    max_dataset_cases: int = Field(
+        default=1_000,
+        ge=1,
+        le=10_000,
+        validation_alias="MAX_DATASET_CASES",
+    )
+    evaluation_max_concurrency: int = Field(
+        default=4,
+        ge=1,
+        le=16,
+        validation_alias="EVALUATION_MAX_CONCURRENCY",
+    )
+    outbound_provider_allowlist: str = Field(
+        default="typesafe_jev",
+        min_length=1,
+        max_length=256,
+        validation_alias="OUTBOUND_PROVIDER_ALLOWLIST",
+    )
+    telemetry_service_name: str = Field(
+        default="jev-decisionops",
+        min_length=1,
+        max_length=64,
+        validation_alias="TELEMETRY_SERVICE_NAME",
+    )

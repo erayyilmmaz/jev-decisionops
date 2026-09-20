@@ -99,6 +99,10 @@ def test_api_exposes_shared_decision_and_evaluation_services() -> None:
         evaluation_id = evaluation.headers["X-Evaluation-ID"]
         assert client.get(f"/v1/evaluations/{evaluation_id}").json() == evaluation.json()
         assert client.get(f"/v1/evaluations/{evaluation_id}/report").status_code == 200
+        metrics = client.get("/metrics")
+        assert metrics.status_code == 200
+        assert 'provider="other"' in metrics.text
+        assert "duplicate charge" not in metrics.text
         assert "/v1/decisions" in client.get("/openapi.json").json()["paths"]
     assert provider.calls == 5
 
